@@ -17,6 +17,7 @@ window.addEventListener("DOMContentLoaded", () => {
     const sidebarDragger = document.getElementById("sidebar-drag");
     const sidebar = document.getElementById("sidebar");
     const previewWindow = document.getElementById("preview");
+    const editor = document.getElementById("editor");
     console.log(previewWindow);
     previewDragger.addEventListener(
         "mouseup",
@@ -34,15 +35,24 @@ window.addEventListener("DOMContentLoaded", () => {
         },
         false
     );
+
+    let currentSidebarWidth = 100;
+    let currentPreviewWidth = 300;
     document.addEventListener("mousemove", (e) => {
         currentMouseX = e.pageX;
         if (draggingPreview) {
-            previewWindow.style.width =
-                (window.innerWidth - currentMouseX - 10).toString() + "px";
+            currentPreviewWidth = window.innerWidth - currentMouseX - 2.5;
         }
         if (draggingSidebar) {
-            sidebar.style.width = currentMouseX + "px";
+            if(currentMouseX < 10){
+                currentSidebarWidth = 10;
+            }else{
+                currentSidebarWidth = currentMouseX -2.5;
+            }
         }
+        previewWindow.style.width = currentPreviewWidth + "px";
+        sidebar.style.width = currentSidebarWidth + "px";
+        editor.style.width = window.innerWidth - (currentPreviewWidth + currentSidebarWidth) + "px";
     });
 
     document.addEventListener("mouseup", () => {
