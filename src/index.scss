@@ -41,13 +41,15 @@ textarea {
 
 code {
     font-family: "Fira Code";
+}
+
+pre > code {
     background-color: #222;
     border: black solid 1px;
     border-radius: 4px;
     padding: 6px;
     display: block;
 }
-
 .CodeMirror {
     width: 100%;
     height: 100% !important;
@@ -243,13 +245,4 @@ code {
     /* prettylights-syntax-markup-deleted */
     color: #ffdcd7;
     background-color: #67060c;
-}
-
-.hljs-char.escape_,
-.hljs-link,
-.hljs-params,
-.hljs-property,
-.hljs-punctuation,
-.hljs-tag {
-    /* purposely ignored */
 }
