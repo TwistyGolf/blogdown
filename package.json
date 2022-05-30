@@ -19,7 +19,9 @@
   "license": "MIT",
   "config": {
     "forge": {
-      "packagerConfig": {},
+      "packagerConfig": {
+        "asar": true
+      },
       "makers": [
         {
           "name": "@electron-forge/maker-squirrel",
@@ -55,6 +57,11 @@
                   "html": "./src/index.html",
                   "js": "./src/renderer.ts",
                   "name": "main_window"
+                },
+                {
+                  "html": "./src/pages/no-project-modal.html",
+                  "js": "./src/renderer.ts",
+                  "name": "no_project_modal"
                 }
               ]
             }
@@ -87,6 +94,7 @@
     "sass": "^1.52.1",
     "sass-loader": "^13.0.0",
     "style-loader": "^3.3.1",
+    "electron-winstaller": "4.0.2",
     "ts-loader": "^9.3.0",
     "typescript": "~4.5.4"
   },
