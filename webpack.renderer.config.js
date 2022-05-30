@@ -2,8 +2,7 @@ const rules = require("./webpack.rules");
 const plugins = require("./webpack.plugins");
 const path = require("path");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
-const HtmlWebpackPlugin = require("html-webpack-plugin");
-const assets = ["img", "pages"]; // asset directories
+const assets = ["img"]; // asset directories
 
 rules.push({
     test: /\.css$/,

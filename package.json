@@ -57,11 +57,6 @@
                   "html": "./src/index.html",
                   "js": "./src/renderer.ts",
                   "name": "main_window"
-                },
-                {
-                  "html": "./src/pages/no-project-modal.html",
-                  "js": "./src/renderer.ts",
-                  "name": "no_project_modal"
                 }
               ]
             }

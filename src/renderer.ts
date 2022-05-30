@@ -56,7 +56,10 @@ window.addEventListener("DOMContentLoaded", () => {
         }
         previewWindow.style.width = currentPreviewWidth + "px";
         sidebar.style.width = currentSidebarWidth + "px";
-        editor.style.width = window.innerWidth - (currentPreviewWidth + currentSidebarWidth) + "px";
+        editor.style.width =
+            window.innerWidth -
+            (currentPreviewWidth + currentSidebarWidth) +
+            "px";
     });
 
     document.addEventListener("mouseup", () => {
