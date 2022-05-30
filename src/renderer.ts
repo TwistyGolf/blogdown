@@ -20,6 +20,7 @@ window.addEventListener("DOMContentLoaded", () => {
     const sidebarDragger = document.getElementById("sidebar-drag");
     const sidebar = document.getElementById("sidebar");
     const previewWindow = document.getElementById("preview");
+    const editor = document.getElementById("editor");
     console.log(previewWindow);
     previewDragger.addEventListener(
         "mouseup",
@@ -55,6 +56,7 @@ window.addEventListener("DOMContentLoaded", () => {
         }
         previewWindow.style.width = currentPreviewWidth + "px";
         sidebar.style.width = currentSidebarWidth + "px";
+        editor.style.width = window.innerWidth - (currentPreviewWidth + currentSidebarWidth) + "px";
     });
 
     document.addEventListener("mouseup", () => {
