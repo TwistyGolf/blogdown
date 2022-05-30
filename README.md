@@ -21,3 +21,14 @@ The builder is accessible through the command line, so you can hook it up to CI 
 
 ## Styling
 All of the styling provided out of the box is free to change. All of this can be done inside the editor. A live preview of your blog is shown to give some context while you make changes.
+
+## Contributing
+
+### Running Blogdown
+
+First you need to clone the repository to a location of you choice.
+Make sure you have node installed.
+
+Then run `npm install` to get all of the dependencies
+
+Then run `npm run start` to launch blogdown.
