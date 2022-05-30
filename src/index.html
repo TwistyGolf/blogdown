@@ -4,22 +4,37 @@
         <meta charset="UTF-8" />
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Blog Tool</title>
+        <title>Blogdown</title>
     </head>
     <body>
+        <div id="title-bar">
+            <img src="/img/blogdown.png" height="20px" />
+            <div id="title-menu">
+                <div id="file" class="title-menu-button">File</div>
+                <div id="edit" class="title-menu-button">Edit</div>
+            </div>
+            <div id="title-text">
+                <span>Blogdown</span>
+            </div>
+            <div id="title-buttons">
+                <div id="minimise" class="title-button">-</div>
+                <div id="restore" class="title-button">□</div>
+                <div id="close" class="title-button">x</div>
+            </div>
+        </div>
         <div id="app">
             <div id="sidebar"></div>
             <div id="sidebar-drag" class="dragger"></div>
             <div id="editor">
                 <div id="editor-header">
-                    <h1>Editor</h1>
+                    <h2>Editor</h2>
                 </div>
                 <textarea id="editor-textarea"></textarea>
             </div>
             <div id="preview-drag" class="dragger"></div>
             <div id="preview">
                 <div id="preview-header">
-                    <h1>Preview</h1>
+                    <h2>Preview</h2>
                 </div>
                 <div id="preview-content"></div>
             </div>

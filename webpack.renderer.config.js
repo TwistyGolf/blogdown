@@ -2,7 +2,8 @@ const rules = require("./webpack.rules");
 const plugins = require("./webpack.plugins");
 const path = require("path");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
-const assets = ["fonts"]; // asset directories
+const HtmlWebpackPlugin = require("html-webpack-plugin");
+const assets = ["img", "pages"]; // asset directories
 
 rules.push({
     test: /\.css$/,
@@ -14,7 +15,19 @@ rules.push({
     use: ["style-loader", "css-loader", "sass-loader"],
 });
 
+plugins.push(
+    new CopyWebpackPlugin({
+        patterns: assets.map((asset) => {
+            return {
+                from: path.resolve(__dirname, "src", asset),
+                to: path.resolve(__dirname, ".webpack/renderer", asset),
+            };
+        }),
+    })
+);
+
 module.exports = {
+    target: "electron-renderer",
     module: {
         rules,
     },

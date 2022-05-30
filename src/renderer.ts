@@ -1,12 +1,15 @@
 import * as CodeMirror from "codemirror";
 import "codemirror/lib/codemirror.css";
 import "./index.scss";
+import "./colours.scss";
 import "codemirror/mode/markdown/markdown.js";
 import "codemirror/theme/darcula.css";
 import "codemirror/mode/xml/xml";
 
 import MarkdownIt from "markdown-it";
 import hljs from "highlight.js";
+import electron, { ipcRenderer } from "electron";
+const ipc = electron.ipcRenderer;
 
 let currentMouseX = 0;
 let draggingPreview = false;
@@ -34,15 +37,24 @@ window.addEventListener("DOMContentLoaded", () => {
         },
         false
     );
+    let currentSidebarWidth = 100;
+    let currentPreviewWidth = 300;
+    previewWindow.style.width = currentPreviewWidth + "px";
+    sidebar.style.width = currentSidebarWidth + "px";
     document.addEventListener("mousemove", (e) => {
         currentMouseX = e.pageX;
         if (draggingPreview) {
-            previewWindow.style.width =
-                (window.innerWidth - currentMouseX - 10).toString() + "px";
+            currentPreviewWidth = window.innerWidth - currentMouseX - 2.5;
         }
         if (draggingSidebar) {
-            sidebar.style.width = currentMouseX + "px";
+            if (currentMouseX < 10) {
+                currentSidebarWidth = 10;
+            } else {
+                currentSidebarWidth = currentMouseX - 2.5;
+            }
         }
+        previewWindow.style.width = currentPreviewWidth + "px";
+        sidebar.style.width = currentSidebarWidth + "px";
     });
 
     document.addEventListener("mouseup", () => {
@@ -93,5 +105,25 @@ window.addEventListener("DOMContentLoaded", () => {
         document.getElementById("preview-content").innerHTML = md.render(
             x.getValue()
         );
+    });
+
+    document.getElementById("close").addEventListener("click", () => {
+        window.close();
+    });
+
+    document.getElementById("minimise").addEventListener("click", () => {
+        ipc.send("minimise");
+    });
+
+    document.getElementById("restore").addEventListener("click", () => {
+        ipc.send("restore");
+    });
+
+    document.getElementById("file").addEventListener("click", () => {
+        ipc.send("selectProject");
+    });
+
+    ipcRenderer.on("open-modal", (event, args) => {
+        alert(args);
     });
 });
