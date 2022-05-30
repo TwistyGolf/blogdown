@@ -38,22 +38,50 @@ window.addEventListener("DOMContentLoaded", () => {
         },
         false
     );
-    let currentSidebarWidth = 100;
+    let currentSidebarWidth = 150;
     let currentPreviewWidth = 300;
+
+    const sidebarHiddenWidth = 10;
+    const sidebarMinWidth = 150;
+
+    const previewHiddenWidth = 10;
+    const previewMinWidth = 150;
+
     previewWindow.style.width = currentPreviewWidth + "px";
     sidebar.style.width = currentSidebarWidth + "px";
+
     document.addEventListener("mousemove", (e) => {
         currentMouseX = e.pageX;
+
         if (draggingPreview) {
             currentPreviewWidth = window.innerWidth - currentMouseX - 2.5;
-        }
-        if (draggingSidebar) {
-            if (currentMouseX < 10) {
-                currentSidebarWidth = 10;
+            const distFromRight = window.innerWidth - currentMouseX;
+
+            if (
+                distFromRight > previewMinWidth / 2 &&
+                distFromRight <= previewMinWidth
+            ) {
+                currentPreviewWidth = previewMinWidth;
+            } else if (distFromRight > previewMinWidth) {
+                currentPreviewWidth = distFromRight - 2.5;
             } else {
-                currentSidebarWidth = currentMouseX - 2.5;
+                currentPreviewWidth = previewHiddenWidth;
             }
         }
+
+        if (draggingSidebar) {
+            if (
+                currentMouseX > sidebarMinWidth / 2 &&
+                currentMouseX <= sidebarMinWidth
+            ) {
+                currentSidebarWidth = sidebarMinWidth;
+            } else if (currentMouseX > sidebarMinWidth) {
+                currentSidebarWidth = currentMouseX - 2.5;
+            } else {
+                currentSidebarWidth = sidebarHiddenWidth;
+            }
+        }
+
         previewWindow.style.width = currentPreviewWidth + "px";
         sidebar.style.width = currentSidebarWidth + "px";
         editor.style.width =
