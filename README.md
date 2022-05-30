@@ -15,7 +15,7 @@ You build up your blog as a collection of markdown files, that you can manage us
 
 ## The Builder
 As you make changes to your blog, you'll want to have an actual website to host somewhere, that's where the builder comes in.
-The builder will look through your project structure, and construct a set of static CSS, HTMl, and JavaScript files containing your blog that you are free to host anywhere.
+The builder will look through your project structure, and construct a set of static CSS, HTML, and JavaScript files containing your blog that you are free to host anywhere.
 
 The builder is accessible through the command line, so you can hook it up to CI tools such as Github Actions, to automate the build/deploy steps.
 
@@ -26,7 +26,7 @@ All of the styling provided out of the box is free to change. All of this can be
 
 ### Running Blogdown
 
-First you need to clone the repository to a location of you choice.
+First you need to clone the repository to a location of your choice.
 Make sure you have node installed.
 
 Then run `npm install` to get all of the dependencies
