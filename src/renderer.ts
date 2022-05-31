@@ -166,9 +166,7 @@ window.addEventListener("DOMContentLoaded", () => {
     });
 
     codeEditor.on("change", (x) => {
-        document.getElementById("editor-header-title").textContent =
-            (codeEditor.getValue() != currentFileInitialContents ? "⬤ " : "") +
-            formatFileName(currentFile);
+        updateFileEdited();
         if (currentFileExtension == "md" || currentFileExtension == "txt") {
             document.getElementById("preview-content").innerHTML = md.render(
                 x.getValue()
@@ -288,8 +286,17 @@ function renderFile(file: string, indent = 0) {
     });
     sidebarFiles.appendChild(dirEl);
 }
+
+function updateFileEdited() {
+    document.getElementById("editor-header-title").textContent =
+        (codeEditor.getValue() != currentFileInitialContents ? "⬤ " : "") +
+        formatFileName(currentFile);
+}
+
 function saveFile() {
     ipcRenderer.send("save-file", currentFile, codeEditor.getValue());
+    currentFileInitialContents = codeEditor.getValue();
+    updateFileEdited();
     document.getElementById("editor-flasher").classList.add("flash");
     setTimeout(() => {
         document.getElementById("editor-flasher").classList.remove("flash");

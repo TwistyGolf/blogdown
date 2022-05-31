@@ -54,19 +54,14 @@ class Project {
         await trawlDirectory(this.directory);
         printDirectory(this.directory);
         mainWindow.webContents.send("render-sidebar", this.directory);
-        this.fsWatcher = chokidar
-            .watch(this.path)
-            .on("all", async (event, path) => {
-                await this.directoryMutex.runExclusive(async () => {
-                    this.directory = initDirectory(this.path);
-                    await trawlDirectory(this.directory);
-                    this.updateOpenDirectories(this.directory);
-                    mainWindow.webContents.send(
-                        "render-sidebar",
-                        this.directory
-                    );
-                });
+        this.fsWatcher = chokidar.watch(this.path).on("all", async () => {
+            await this.directoryMutex.runExclusive(async () => {
+                this.directory = initDirectory(this.path);
+                await trawlDirectory(this.directory);
+                this.updateOpenDirectories(this.directory);
+                mainWindow.webContents.send("render-sidebar", this.directory);
             });
+        });
     }
 
     updateOpenDirectories(dir = this.directory) {
@@ -130,23 +125,28 @@ export function lastOpenProject(): string {
 
 export async function openProject(dir: string, autoLoad = false) {
     if (await directoryIsProject(dir)) {
-        currentProject?.closeProject();
-        const p = new Project(dir);
-        await p.loadConfig();
-        await p.readDirectory();
-        store.set("lastOpenedProject", dir);
-        currentProject = p;
+        openProjectProperly(dir);
     } else if (!autoLoad) {
         const response = openModal(
             "There isn't a project in this directory, would you like to make one?",
             ["Yes", "No"]
         );
         if (response == 0) {
-            intialiseProject(dir);
+            await intialiseProject(dir);
+            await openProjectProperly(dir);
         } else {
             console.log("Don't make proj");
         }
     }
+}
+
+async function openProjectProperly(dir: string) {
+    currentProject?.closeProject();
+    const p = new Project(dir);
+    await p.loadConfig();
+    await p.readDirectory();
+    store.set("lastOpenedProject", dir);
+    currentProject = p;
 }
 
 async function directoryIsProject(dir: string) {
@@ -161,10 +161,48 @@ async function directoryIsProject(dir: string) {
     }
 }
 
-function intialiseProject(dir: string) {
-    fs.readdir(dir, (err, files) => {
-        console.log(files);
-    });
+const exampleConfig = `{
+	"projectName": "example",
+	"title": "Blog Name",
+	"postsDirectory": "posts",
+	"imagesDirectory": "img",
+	"icon": "favicon.ico"
+}`;
+
+const examplePost = `
+## This is a post in Blogdown
+### 😎 Emoji's are supported 😎
+You have access to all the common markdown syntax
+Such as:
+- *italtics*
+
+- **bold**
+
+- ***bold italtics***
+
+- ~~strikethrough~~
+
+- \`inline code blocks\`
+
+- \`\`\`js
+  let x = "Styled code blocks"
+  // These are multiline
+  \`\`\`
+You can also resize the preview window by dragging |
+
+<---------------------------------------------------
+
+## Horizontal rules
+---
+`;
+
+async function intialiseProject(dir: string) {
+    await fsPromises.writeFile(pathF.join(dir, configFileName), exampleConfig);
+    await fsPromises.mkdir(pathF.join(dir, "posts"));
+    await fsPromises.writeFile(
+        pathF.join(dir, "posts", "example.md"),
+        examplePost
+    );
 }
 
 ipcMain.on("load-file-contents", async (event, file: string) => {

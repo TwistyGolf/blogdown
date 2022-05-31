@@ -142,7 +142,8 @@ pre > code {
 #preview {
     width: 400px;
     height: 100%;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     display: flex;
     color: $text-color;
     flex-direction: column;
