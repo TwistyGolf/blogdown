@@ -19,9 +19,7 @@
   "license": "MIT",
   "config": {
     "forge": {
-      "packagerConfig": {
-        "asar": true
-      },
+      "packagerConfig": {},
       "makers": [
         {
           "name": "@electron-forge/maker-squirrel",
@@ -58,7 +56,7 @@
                   "js": "./src/renderer.ts",
                   "name": "main_window",
                   "preload": {
-                    "js": "./src/reload.ts"
+                    "js": "./src/preload.ts"
                   }
                 }
               ]
@@ -102,6 +100,7 @@
     "async-mutex": "^0.3.2",
     "chokidar": "^3.5.3",
     "codemirror": "^5.65.4",
+    "cpy": "^9.0.1",
     "electron-squirrel-startup": "^1.0.0",
     "electron-store": "^8.0.1",
     "markdown-it": "^13.0.1",

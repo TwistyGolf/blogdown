@@ -365,7 +365,7 @@ function createEditorTabElement(file: OpenedFile) {
     const icon = document.createElement("div");
     icon.classList.add("tab-icon");
     const iconImg = document.createElement("img");
-    iconImg.src = `/img/icons/${getExtension(file.path)}.png`;
+    iconImg.src = `img/icons/${getExtension(file.path)}.png`;
     icon.appendChild(iconImg);
     tab.appendChild(icon);
     const tabText = document.createElement("div");
@@ -379,7 +379,7 @@ function createEditorTabElement(file: OpenedFile) {
     const close = document.createElement("div");
     close.classList.add("tab-close");
     const closeImg = document.createElement("img");
-    closeImg.src = `/img/icons/close.png`;
+    closeImg.src = `img/icons/close.png`;
     close.appendChild(closeImg);
     tab.appendChild(close);
 
