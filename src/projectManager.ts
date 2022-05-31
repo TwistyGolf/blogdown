@@ -8,7 +8,7 @@ import * as pathF from "path";
 import chokidar from "chokidar";
 import { Mutex } from "async-mutex";
 
-import { ipcMain } from "electron";
+import { ipcMain, ipcRenderer } from "electron";
 
 const store = new Store<StoreFormat>({ schema: schema });
 
@@ -207,11 +207,18 @@ async function intialiseProject(dir: string) {
 
 ipcMain.on("load-file-contents", async (event, file: string) => {
     const fileContent = await fsPromises.readFile(file);
-    event.sender.send("file-contents", fileContent.toString());
+    event.sender.send("file-contents", file, fileContent.toString());
 });
 
 ipcMain.on("save-file", async (event, file: string, contents: string) => {
     await fsPromises.writeFile(file, contents);
+    event.sender.send("file-saved", file, contents);
+});
+
+ipcMain.on("rename-file", async (event, file: string, newName: string) => {
+    if (file.includes(currentProject.directory.path)) {
+        await fsPromises.rename(file, newName);
+    }
 });
 
 ipcMain.on("open-directory", (event, path) => {
@@ -222,3 +229,41 @@ ipcMain.on("open-directory", (event, path) => {
         currentProject.openDirectories.push(path);
     }
 });
+
+export async function createFile(fileName: string, directory: Directory) {
+    await fsPromises.writeFile(pathF.join(directory.path, fileName), "");
+}
+
+function getFileNameWithoutExtension(file: string) {
+    return file.substring(0, file.lastIndexOf("."));
+}
+
+function getExtension(file: string) {
+    return file.substring(file.lastIndexOf("."));
+}
+
+export async function cloneFile(file: string) {
+    const fileExtension = getExtension(file);
+    let attempt = 1;
+    let nameFound = false;
+    while (!nameFound) {
+        try {
+            await fsPromises.stat(
+                `${getFileNameWithoutExtension(
+                    file
+                )}(${attempt})${fileExtension}`
+            );
+            attempt += 1;
+        } catch {
+            nameFound = true;
+        }
+    }
+    await fsPromises.copyFile(
+        file,
+        `${getFileNameWithoutExtension(file)}(${attempt})${fileExtension}`
+    );
+}
+
+export async function deleteFile(file: string) {
+    await fsPromises.rm(file, {});
+}

@@ -1,0 +1,39 @@
+@mixin rounded-top($radius) {
+    border-top-left-radius: $radius;
+    border-top-right-radius: $radius;
+}
+@mixin rounded-right($radius) {
+    border-top-right-radius: $radius;
+    border-bottom-right-radius: $radius;
+}
+@mixin rounded-bottom($radius) {
+    border-bottom-left-radius: $radius;
+    border-bottom-right-radius: $radius;
+}
+@mixin rounded-left($radius) {
+    border-top-left-radius: $radius;
+    border-bottom-left-radius: $radius;
+}
+
+@mixin custom-scroll($width: 10px) {
+    /* width */
+    &::-webkit-scrollbar {
+        width: $width;
+        height: $width;
+    }
+
+    /* Track */
+    &::-webkit-scrollbar-track {
+        background: $preview-background-color;
+    }
+
+    /* Handle */
+    &::-webkit-scrollbar-thumb {
+        background: #888;
+    }
+
+    /* Handle on hover */
+    &::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+}

@@ -7,11 +7,13 @@ import "codemirror/theme/darcula.css";
 import "codemirror/mode/xml/xml";
 import "codemirror/mode/javascript/javascript";
 import "markdown-it-json";
+import { without } from "lodash";
 
 import MarkdownIt from "markdown-it";
 import hljs from "highlight.js";
-import electron, { ipcRenderer } from "electron";
+import electron, { ipcMain, ipcRenderer } from "electron";
 import { Directory } from "./projectManager";
+import { IDictonary } from "./interfaces";
 
 const ipc = electron.ipcRenderer;
 
@@ -161,13 +163,16 @@ window.addEventListener("DOMContentLoaded", () => {
             // Prevent the Save dialog to open
             e.preventDefault();
             // Place your code here
-            saveFile();
+            fileManager.saveCurrentFile();
         }
     });
 
     codeEditor.on("change", (x) => {
-        updateFileEdited();
-        if (currentFileExtension == "md" || currentFileExtension == "txt") {
+        fileManager.updateFileContents(
+            fileManager.currentlyOpenFile,
+            x.getValue()
+        );
+        if (previewFormats.includes(fileManager.currentFileExtension())) {
             document.getElementById("preview-content").innerHTML = md.render(
                 x.getValue()
             );
@@ -200,21 +205,208 @@ window.addEventListener("DOMContentLoaded", () => {
         renderSidebar();
     });
 
-    ipcRenderer.on("file-contents", (event, args) => {
-        codeEditor.setOption("mode", "json");
-        codeEditor.setValue(args);
-        currentFileInitialContents = args;
-        document.getElementById("editor-header-title").textContent =
-            formatFileName(currentFile);
-    });
+    fileManager.addFileCb = onFileOpened;
+
+    fileManager.fileSwitchedCb = onFileSwitched;
+
+    fileManager.fileClosedCb = onFileClosed;
+
+    fileManager.allFilesClosedCb = onAllFilesClosed;
+
+    fileManager.fileEditedStateCb = onFileEditedChanged;
+
+    ipcRenderer.send("load-last-project");
     sidebarFiles = document.getElementById("sidebar-files");
 });
 
+const previewFormats = ["", "md", "txt"];
+
+const formatMapper = <IDictonary<string>>{
+    md: "markdown",
+    txt: "markdown",
+    json: "json",
+};
+
+class OpenedFile {
+    path: string;
+    loaded: boolean;
+    initalContent: string;
+    edited: boolean;
+    element: HTMLElement;
+    currentContent: string;
+    extension: string;
+
+    constructor(path: string) {
+        this.path = path;
+        this.loaded = false;
+        this.edited = false;
+        this.initalContent = "";
+        this.extension = getExtension(this.path);
+    }
+}
+
+class FileManager {
+    openedFiles: Map<string, OpenedFile> = new Map<string, OpenedFile>();
+    addFileCb: (openedFile: OpenedFile) => void;
+    fileSwitchedCb: (file: OpenedFile) => void;
+    fileClosedCb: (file: OpenedFile) => void;
+    fileEditedStateCb: (file: OpenedFile) => void;
+    allFilesClosedCb: () => void;
+    currentlyOpenFile: OpenedFile;
+
+    currentFileExtension() {
+        return getExtension(this.currentlyOpenFile.path);
+    }
+
+    isFileOpen(file: string) {
+        return this.openedFiles.has(file);
+    }
+
+    openFile(file: string, content: string) {
+        console.log("Opening ", file);
+        const openedFile = new OpenedFile(file);
+        openedFile.initalContent = content;
+        openedFile.currentContent = content;
+        this.openedFiles.set(file, openedFile);
+        this.currentlyOpenFile = openedFile;
+        this.addFileCb(openedFile);
+    }
+
+    switchFile(file: string) {
+        if (this.isFileOpen(file)) {
+            const openedFile = this.openedFiles.get(file);
+            this.currentlyOpenFile = openedFile;
+            this.fileSwitchedCb(openedFile);
+        }
+    }
+
+    closeFile(file: OpenedFile) {
+        this.openedFiles.delete(file.path);
+        if (this.currentlyOpenFile == file) {
+            console.log("switching to old file");
+            const newFile = this.openedFiles.keys().next().value;
+            if (newFile == undefined) {
+                this.allFilesClosedCb();
+                this.currentlyOpenFile = null;
+            } else {
+                this.switchFile(newFile);
+            }
+        }
+        this.fileClosedCb(file);
+    }
+
+    updateFileContents(file: OpenedFile, content: string) {
+        file.currentContent = content;
+        file.edited = file.currentContent != file.initalContent;
+        this.fileEditedStateCb(file);
+    }
+
+    saveCurrentFile() {
+        const file = this.currentlyOpenFile;
+        if (!file.edited) {
+            return;
+        }
+        ipcRenderer.send("save-file", file.path, file.currentContent);
+        ipcRenderer.once("file-saved", (event, filePath, contents) => {
+            file.initalContent = contents;
+            file.edited = false;
+            file.currentContent = contents;
+            this.fileEditedStateCb(file);
+            document.getElementById("editor-flasher").classList.add("flash");
+            setTimeout(() => {
+                document
+                    .getElementById("editor-flasher")
+                    .classList.remove("flash");
+            }, 500);
+        });
+    }
+}
+
+const fileManager: FileManager = new FileManager();
+
+function openFile(file: string) {
+    if (fileManager.isFileOpen(file)) {
+        fileManager.switchFile(file);
+        return;
+    }
+    ipcRenderer.send("load-file-contents", file);
+    ipcRenderer.once("file-contents", (event, file, content) => {
+        fileManager.openFile(file, content);
+    });
+}
+
+function onFileOpened(file: OpenedFile) {
+    file.element = createEditorTabElement(file);
+    onFileSwitched(file);
+}
+
+function onFileClosed(file: OpenedFile) {
+    const el = file.element;
+    renderSidebar();
+    el.remove();
+}
+
+function onAllFilesClosed() {
+    codeEditor.setValue("");
+}
+
+function onFileEditedChanged(file: OpenedFile) {
+    if (file.edited) {
+        file.element.classList.add("edited");
+    } else {
+        file.element.classList.remove("edited");
+    }
+}
+
+function createEditorTabElement(file: OpenedFile) {
+    const tabContainer = document.getElementById("editor-tabs");
+    const tab = document.createElement("div");
+    tab.classList.add("editor-tab");
+    const icon = document.createElement("div");
+    icon.classList.add("tab-icon");
+    const iconImg = document.createElement("img");
+    iconImg.src = `/img/icons/${getExtension(file.path)}.png`;
+    icon.appendChild(iconImg);
+    tab.appendChild(icon);
+    const tabText = document.createElement("div");
+    tabText.classList.add("tab-text");
+    tabText.textContent = formatFileName(file.path);
+    tab.appendChild(tabText);
+    const tabEdited = document.createElement("div");
+    tabEdited.classList.add("tab-edited");
+    tabEdited.textContent = "⬤";
+    tab.appendChild(tabEdited);
+    const close = document.createElement("div");
+    close.classList.add("tab-close");
+    const closeImg = document.createElement("img");
+    closeImg.src = `/img/icons/close.png`;
+    close.appendChild(closeImg);
+    tab.appendChild(close);
+
+    tab.addEventListener("click", () => {
+        fileManager.switchFile(file.path);
+    });
+
+    close.addEventListener("click", () => {
+        fileManager.closeFile(file);
+        fileManager.switchFile(file.path);
+    });
+
+    tabContainer.appendChild(tab);
+    return tab;
+}
+
+function onFileSwitched(file: OpenedFile) {
+    codeEditor.setOption("mode", formatMapper[file.extension]);
+    codeEditor.setValue(file.currentContent);
+    fileManager.openedFiles.forEach((file, path) => {
+        file.element.classList.remove("selected");
+    });
+    file.element.classList.add("selected");
+    renderSidebar();
+}
+
 let currentDirectory: Directory;
-let currentFile: string;
-let currentFileElement: HTMLElement;
-let currentFileInitialContents: string;
-let currentFileExtension: string;
 
 function renderSidebar() {
     sidebarFiles.replaceChildren();
@@ -243,6 +435,9 @@ function createDirectoryElement(dir: Directory, indent = 0) {
         " ".repeat(indent) +
         (dir.expanded ? "˅ " : "> ") +
         formatFileName(dir.path);
+    dirEl.addEventListener("contextmenu", () => {
+        ipcRenderer.send("dir-context", dir);
+    });
     dirEl.addEventListener("click", () => {
         dir.expanded = !dir.expanded;
         ipcRenderer.send("open-directory", dir.path);
@@ -252,6 +447,7 @@ function createDirectoryElement(dir: Directory, indent = 0) {
 }
 
 function formatFileName(file: string) {
+    if (file == "" || file == null) return file;
     return file.substring(
         //TODO: Path sep
         file.lastIndexOf("\\") + 1
@@ -268,41 +464,18 @@ function renderFile(file: string, indent = 0) {
     const dirEl = document.createElement("div");
     dirEl.classList.add("directory-entry");
     dirEl.textContent = " ".repeat(indent) + formatFileName(file);
-    if (file == currentFile) {
-        currentFileElement = dirEl;
-        currentFileElement.classList.add("opened");
+    if (fileManager.currentlyOpenFile != null) {
+        if (file == fileManager.currentlyOpenFile.path) {
+            dirEl.classList.add("opened");
+        }
     }
+    dirEl.addEventListener("contextmenu", () => {
+        ipcRenderer.send("file-context", file);
+    });
     dirEl.addEventListener("click", () => {
         if (allowedExtensions.includes(getExtension(file))) {
-            if (currentFileElement != null) {
-                currentFileElement.classList.remove("opened");
-            }
-            currentFile = file;
-            currentFileExtension = getExtension(file);
-            currentFileElement = dirEl;
-            currentFileElement.classList.add("opened");
             openFile(file);
         }
     });
     sidebarFiles.appendChild(dirEl);
-}
-
-function updateFileEdited() {
-    document.getElementById("editor-header-title").textContent =
-        (codeEditor.getValue() != currentFileInitialContents ? "⬤ " : "") +
-        formatFileName(currentFile);
-}
-
-function saveFile() {
-    ipcRenderer.send("save-file", currentFile, codeEditor.getValue());
-    currentFileInitialContents = codeEditor.getValue();
-    updateFileEdited();
-    document.getElementById("editor-flasher").classList.add("flash");
-    setTimeout(() => {
-        document.getElementById("editor-flasher").classList.remove("flash");
-    }, 500);
-}
-
-function openFile(file: string) {
-    ipcRenderer.send("load-file-contents", file);
 }
