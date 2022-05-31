@@ -7,11 +7,10 @@ import "codemirror/theme/darcula.css";
 import "codemirror/mode/xml/xml";
 import "codemirror/mode/javascript/javascript";
 import "markdown-it-json";
-import { without } from "lodash";
 
 import MarkdownIt from "markdown-it";
 import hljs from "highlight.js";
-import electron, { ipcMain, ipcRenderer } from "electron";
+import electron, { ipcRenderer } from "electron";
 import { Directory } from "./projectManager";
 import { IDictonary } from "./interfaces";
 
@@ -399,7 +398,7 @@ function createEditorTabElement(file: OpenedFile) {
 function onFileSwitched(file: OpenedFile) {
     codeEditor.setOption("mode", formatMapper[file.extension]);
     codeEditor.setValue(file.currentContent);
-    fileManager.openedFiles.forEach((file, path) => {
+    fileManager.openedFiles.forEach((file) => {
         file.element.classList.remove("selected");
     });
     file.element.classList.add("selected");

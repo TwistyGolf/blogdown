@@ -8,7 +8,7 @@ import * as pathF from "path";
 import chokidar from "chokidar";
 import { Mutex } from "async-mutex";
 
-import { ipcMain, ipcRenderer } from "electron";
+import { ipcMain } from "electron";
 
 const store = new Store<StoreFormat>({ schema: schema });
 
