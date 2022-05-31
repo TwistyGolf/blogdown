@@ -234,6 +234,7 @@ class OpenedFile {
     element: HTMLElement;
     currentContent: string;
     extension: string;
+    undoHistory: string;
 
     constructor(path: string) {
         this.path = path;
@@ -247,7 +248,7 @@ class OpenedFile {
 class FileManager {
     openedFiles: Map<string, OpenedFile> = new Map<string, OpenedFile>();
     addFileCb: (openedFile: OpenedFile) => void;
-    fileSwitchedCb: (file: OpenedFile) => void;
+    fileSwitchedCb: (file: OpenedFile, oldFile: OpenedFile) => void;
     fileClosedCb: (file: OpenedFile) => void;
     fileEditedStateCb: (file: OpenedFile) => void;
     allFilesClosedCb: () => void;
@@ -274,8 +275,9 @@ class FileManager {
     switchFile(file: string) {
         if (this.isFileOpen(file)) {
             const openedFile = this.openedFiles.get(file);
+            const oldFile = this.currentlyOpenFile;
             this.currentlyOpenFile = openedFile;
-            this.fileSwitchedCb(openedFile);
+            this.fileSwitchedCb(openedFile, oldFile);
         }
     }
 
@@ -336,7 +338,7 @@ function openFile(file: string) {
 
 function onFileOpened(file: OpenedFile) {
     file.element = createEditorTabElement(file);
-    onFileSwitched(file);
+    onFileSwitched(file, fileManager.currentlyOpenFile);
 }
 
 function onFileClosed(file: OpenedFile) {
@@ -395,9 +397,17 @@ function createEditorTabElement(file: OpenedFile) {
     return tab;
 }
 
-function onFileSwitched(file: OpenedFile) {
+function onFileSwitched(file: OpenedFile, oldFile: OpenedFile) {
+    if (oldFile != null) {
+        oldFile.undoHistory = codeEditor.getHistory();
+    }
     codeEditor.setOption("mode", formatMapper[file.extension]);
     codeEditor.setValue(file.currentContent);
+    if (file.undoHistory == null || file.undoHistory == "") {
+        codeEditor.clearHistory();
+    } else {
+        codeEditor.setHistory(file.undoHistory);
+    }
     fileManager.openedFiles.forEach((file) => {
         file.element.classList.remove("selected");
     });
@@ -460,21 +470,21 @@ function getExtension(file: string) {
 const allowedExtensions = ["txt", "md", "json"];
 
 function renderFile(file: string, indent = 0) {
-    const dirEl = document.createElement("div");
-    dirEl.classList.add("directory-entry");
-    dirEl.textContent = " ".repeat(indent) + formatFileName(file);
+    const fileEl = document.createElement("div");
+    fileEl.classList.add("directory-entry");
+    fileEl.textContent = " ".repeat(indent) + "- " + formatFileName(file);
     if (fileManager.currentlyOpenFile != null) {
         if (file == fileManager.currentlyOpenFile.path) {
-            dirEl.classList.add("opened");
+            fileEl.classList.add("opened");
         }
     }
-    dirEl.addEventListener("contextmenu", () => {
+    fileEl.addEventListener("contextmenu", () => {
         ipcRenderer.send("file-context", file);
     });
-    dirEl.addEventListener("click", () => {
+    fileEl.addEventListener("click", () => {
         if (allowedExtensions.includes(getExtension(file))) {
             openFile(file);
         }
     });
-    sidebarFiles.appendChild(dirEl);
+    sidebarFiles.appendChild(fileEl);
 }
