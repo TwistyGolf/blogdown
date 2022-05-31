@@ -1,6 +1,4 @@
-$background-color: #555;
-$text-color: #bbb;
-$preview-background-color: #2b2b2b;
+@import "colours";
 
 @font-face {
     font-family: "Fira Code";
@@ -30,6 +28,7 @@ body {
     margin: auto;
     height: 100vh;
     border-radius: 1rem;
+    user-select: none;
 }
 
 textarea {
@@ -71,9 +70,17 @@ pre > code {
     width: 100px;
     background-color: $background-color;
     border-bottom-left-radius: 0.5rem;
+    color: $text-color;
+    #header {
+        padding-left: 5px;
+        span {
+            border-bottom: 1px solid white;
+        }
+    }
 }
 
 #editor {
+    position: relative;
     font-family: "Fira Code";
     color: $text-color;
     flex: 1;
@@ -94,8 +101,42 @@ pre > code {
             margin-bottom: 0.5rem;
             margin-right: 1rem;
             border-bottom: 1px solid $text-color;
+            span {
+                font-size: medium;
+            }
         }
     }
+}
+
+@keyframes flash {
+    0% {
+        opacity: 0;
+    }
+    50% {
+        opacity: 0.5;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+.flasher {
+    background-color: #bbb;
+    position: absolute;
+    opacity: 0;
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    pointer-events: none;
+}
+
+.flash {
+    -webkit-animation-duration: 0.5s;
+    animation-duration: 0.5s;
+    -webkit-animation-fill-mode: both;
+    animation-fill-mode: both;
+    animation-name: flash;
 }
 
 #preview {
@@ -202,6 +243,27 @@ pre > code {
     }
     &:hover {
         background-color: $background-color;
+    }
+}
+
+#sidebar-files {
+    display: flex;
+    flex-direction: column;
+    font-size: small;
+    padding-top: 0.5rem;
+}
+
+.directory-entry {
+    padding-left: 0.5rem;
+    height: 50px;
+    flex: 1;
+    white-space: pre;
+    cursor: pointer;
+    &.opened {
+        background-color: $preview-background-color;
+    }
+    &:hover {
+        background-color: $preview-background-color;
     }
 }
 
