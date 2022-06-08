@@ -114,7 +114,7 @@ ipcMain.on("dir-context", (event, directory: Directory) => {
     menu.popup();
 });
 
-ipcMain.on("file-context", (event, args) => {
+ipcMain.on("file-context", (event, file: string) => {
     const menu = Menu.buildFromTemplate([
         {
             label: "Rename",
@@ -125,13 +125,13 @@ ipcMain.on("file-context", (event, args) => {
         {
             label: "Clone",
             click: async () => {
-                cloneFile(args);
+                cloneFile(file);
             },
         },
         {
             label: "Delete",
             click: async () => {
-                deleteFile(args);
+                deleteFile(file);
             },
         },
     ]);

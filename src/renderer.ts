@@ -14,7 +14,7 @@ import electron, { ipcRenderer } from "electron";
 import { Directory } from "./projectManager";
 import { IDictonary } from "./interfaces";
 import {compile} from 'sass';
-
+import { editorTabTemplate } from "./templates";
 const ipc = electron.ipcRenderer;
 
 let currentMouseX = 0;
@@ -403,34 +403,17 @@ function onFileEditedChanged(file: OpenedFile) {
 
 function createEditorTabElement(file: OpenedFile) {
     const tabContainer = document.getElementById("editor-tabs");
-    const tab = document.createElement("div");
-    tab.classList.add("editor-tab");
-    const icon = document.createElement("div");
-    icon.classList.add("tab-icon");
-    const iconImg = document.createElement("img");
-    iconImg.src = `img/icons/${getExtension(file.path)}.png`;
-    icon.appendChild(iconImg);
-    tab.appendChild(icon);
-    const tabText = document.createElement("div");
-    tabText.classList.add("tab-text");
-    tabText.textContent = formatFileName(file.path);
-    tab.appendChild(tabText);
-    const tabEdited = document.createElement("div");
-    tabEdited.classList.add("tab-edited");
-    tabEdited.textContent = "⬤";
-    tab.appendChild(tabEdited);
-    const close = document.createElement("div");
-    close.classList.add("tab-close");
-    const closeImg = document.createElement("img");
-    closeImg.src = `img/icons/close.png`;
-    close.appendChild(closeImg);
-    tab.appendChild(close);
+    const tab = editorTabTemplate();
+    const tabIcon = tab.querySelector(".tab-icon>img") as HTMLImageElement;
+    tabIcon.src = `img/icons/${getExtension(file.path)}.png`;
+
+    tab.querySelector(".tab-text").textContent = formatFileName(file.path);
 
     tab.addEventListener("click", () => {
         fileManager.switchFile(file.path);
     });
 
-    close.addEventListener("click", () => {
+    tab.querySelector(".tab-close").addEventListener("click", () => {
         fileManager.closeFile(file);
         fileManager.switchFile(file.path);
     });
