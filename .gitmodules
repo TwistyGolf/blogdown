@@ -1,0 +1,3 @@
+[submodule "blogdown-builder"]
+	path = blogdown-builder
+	url = https://github.com/lewis-savage/blogdown-builder.git
