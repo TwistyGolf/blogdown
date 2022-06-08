@@ -205,23 +205,31 @@ async function intialiseProject(dir: string) {
     );
 }
 
+function fileIsInActiveDirectory(file: string) {
+    return file.includes(currentProject.directory.path);
+}
+
 ipcMain.on("load-file-contents", async (event, file: string) => {
+    if (!fileIsInActiveDirectory) return;
     const fileContent = await fsPromises.readFile(file);
     event.sender.send("file-contents", file, fileContent.toString());
 });
 
 ipcMain.on("save-file", async (event, file: string, contents: string) => {
+    if (!fileIsInActiveDirectory) return;
     await fsPromises.writeFile(file, contents);
     event.sender.send("file-saved", file, contents);
 });
 
 ipcMain.on("rename-file", async (event, file: string, newName: string) => {
+    if (!fileIsInActiveDirectory) return;
     if (file.includes(currentProject.directory.path)) {
         await fsPromises.rename(file, newName);
     }
 });
 
 ipcMain.on("open-directory", (event, path) => {
+    if (!fileIsInActiveDirectory) return;
     if (currentProject.openDirectories.includes(path)) {
         const index = currentProject.openDirectories.indexOf(path);
         currentProject.openDirectories.splice(index, 1);
@@ -231,6 +239,7 @@ ipcMain.on("open-directory", (event, path) => {
 });
 
 export async function createFile(fileName: string, directory: Directory) {
+    if (!fileIsInActiveDirectory) return;
     await fsPromises.writeFile(pathF.join(directory.path, fileName), "");
 }
 
@@ -243,6 +252,7 @@ function getExtension(file: string) {
 }
 
 export async function cloneFile(file: string) {
+    if (!fileIsInActiveDirectory) return;
     const fileExtension = getExtension(file);
     let attempt = 1;
     let nameFound = false;
@@ -265,5 +275,6 @@ export async function cloneFile(file: string) {
 }
 
 export async function deleteFile(file: string) {
+    if (!fileIsInActiveDirectory) return;
     await fsPromises.rm(file, {});
 }

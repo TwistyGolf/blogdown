@@ -234,7 +234,8 @@ pre > code {
 #preview {
     width: 400px;
     height: 100%;
-    overflow-y: auto;
+    position: relative;
+    overflow-y: hidden;
     overflow-x: hidden;
     display: flex;
     color: $text-color;
@@ -261,20 +262,37 @@ pre > code {
         @include custom-scroll();
         overflow-y: auto;
         overflow-x: hidden;
+        position: absolute;
+        top: 30px;
+        right: 0;
+        left: 0;
+        bottom: 0;
         padding: 0rem 1rem 0rem 1rem;
     }
 }
 
 .dragger {
     width: 5px;
-    box-shadow: 10px 5px 5px red;
     cursor: e-resize;
     -webkit-user-drag: none;
     background-color: darkgray;
     -webkit-user-drag: none;
-
+    position: relative;
+    .dragger-indicator {
+        display: none;
+        pointer-events: none;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1;
+        width: 40px;
+    }
     &:hover {
         background-color: gray;
+        .dragger-indicator {
+            display: block;
+        }
     }
 }
 
