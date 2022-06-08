@@ -13,6 +13,7 @@ import hljs from "highlight.js";
 import electron, { ipcRenderer } from "electron";
 import { Directory } from "./projectManager";
 import { IDictonary } from "./interfaces";
+import {compile} from 'sass';
 
 const ipc = electron.ipcRenderer;
 
@@ -71,6 +72,45 @@ function resizePreview() {
         currentPreviewWidth = previewHiddenWidth;
     }
 }
+
+let preview: HTMLElement;
+let previewCss: HTMLElement;
+
+function createPreview()
+{
+    const new_style = document.createElement( "style" ),
+    new_div = document.createElement( "div" ),
+    new_p = document.createElement( "p" ),
+    shadow = new_div.attachShadow( { mode: "open" } );
+
+    new_style.textContent = `p {
+padding: 1em;
+border-radius: 1em;
+box-shadow: 2px 2px 15px 5px rgba( 0, 0, 0, .5 );
+    }`;
+    shadow.appendChild( new_style );
+
+    new_p.textContent = "Shadow DOM FTW \\o/";
+    shadow.appendChild( new_p );
+
+    new_div.style.all = "unset";
+    preview = new_div;
+    previewCss = new_style;
+    document.getElementById('preview-content').appendChild(new_div);
+
+}
+
+function updatePreviewCss(css: string)
+{
+    previewCss.textContent = css;
+}
+
+function updatePreviewScss(scss: string)
+{
+    const css = compile(scss).css;   
+    updatePreviewCss(css);
+}
+
 
 window.addEventListener("DOMContentLoaded", () => {
     const previewDragger = document.getElementById("preview-drag");
@@ -203,6 +243,8 @@ window.addEventListener("DOMContentLoaded", () => {
         currentDirectory = args;
         renderSidebar();
     });
+
+    createPreview();
 
     fileManager.addFileCb = onFileOpened;
 
