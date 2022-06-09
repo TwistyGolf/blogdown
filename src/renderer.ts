@@ -213,8 +213,14 @@ window.addEventListener("DOMContentLoaded", () => {
     ipcRenderer.on("open-modal", (event, args) => {
         alert(args);
     });
-    ipcRenderer.on("render-sidebar", (event, args: Directory) => {
-        currentDirectory = args;
+
+    ipcRenderer.on("project-loaded", (event, dir: Directory) => {
+        currentDirectory = dir;
+        ipcRenderer.send("request-css");
+    });
+
+    ipcRenderer.on("render-sidebar", (event, dir: Directory) => {
+        currentDirectory = dir;
         renderSidebar();
     });
 

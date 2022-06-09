@@ -53,6 +53,7 @@ class Project {
         this.directory = initDirectory(this.path);
         this.directory.expanded = true;
         await trawlDirectory(this.directory);
+        mainWindow.webContents.send("project-loaded", this.directory);
         mainWindow.webContents.send("render-sidebar", this.directory);
         this.fsWatcher = chokidar.watch(this.path).on("all", async () => {
             await this.directoryMutex.runExclusive(async () => {

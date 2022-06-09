@@ -51,16 +51,18 @@ export const cssTemplate = `
 
 @import url('https://fonts.googleapis.com/css2?family=Fira+Code&display=swap');
 
-body
+/*This is the main container*/
+#content
 {
- 	font-family: "Fira Code"; 
- 	color: #bbb;
- 	padding-left: 1em;
- 	padding-right:1em;
+	
+ 	font-family: "Fira Code";
 }
 
-span {
-  	font-family: "Fira Code";
+#post
+{
+ 	color: #bbb;
+ 	padding-left: 1em;
+ 	padding-right: 1em;
 }
 
 code {
