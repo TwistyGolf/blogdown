@@ -23,7 +23,7 @@ let draggingPreview = false;
 let draggingSidebar = false;
 
 let currentSidebarWidth = 170;
-let currentPreviewWidth = 300;
+let currentPreviewWidth = 500;
 
 const sidebarHiddenWidth = 10;
 const sidebarMinWidth = 150;
@@ -46,15 +46,21 @@ function updateWindowSizes() {
 }
 
 function resizeSidebar() {
-    if (
-        currentMouseX > sidebarMinWidth / 2 &&
-        currentMouseX <= sidebarMinWidth
-    ) {
+    const shiftedMouse = currentMouseX - 2.5;
+    if (shiftedMouse > sidebarMinWidth / 2 && shiftedMouse <= sidebarMinWidth) {
         currentSidebarWidth = sidebarMinWidth;
-    } else if (currentMouseX > sidebarMinWidth) {
-        currentSidebarWidth = currentMouseX - 2.5;
+        document.getElementById("sidebar-files").style.display = "inherit";
+        document.getElementById("sidebar-header-text").style.display =
+            "inherit";
+    } else if (shiftedMouse > sidebarMinWidth) {
+        currentSidebarWidth = shiftedMouse;
+        document.getElementById("sidebar-files").style.display = "inherit";
+        document.getElementById("sidebar-header-text").style.display =
+            "inherit";
     } else {
         currentSidebarWidth = sidebarHiddenWidth;
+        document.getElementById("sidebar-files").style.display = "none";
+        document.getElementById("sidebar-header-text").style.display = "none";
     }
 }
 
@@ -238,7 +244,9 @@ window.addEventListener("DOMContentLoaded", () => {
     fileManager.allFilesClosedCb = onAllFilesClosed;
 
     fileManager.fileEditedStateCb = onFileEditedChanged;
-
+    ipcRenderer.on("file-contents", (event, file, content) => {
+        fileManager.openFile(file, content);
+    });
     ipcRenderer.send("load-last-project");
     sidebarFiles = document.getElementById("sidebar-files");
 });
@@ -351,9 +359,19 @@ class FileManager {
 
     saveCurrentFile() {
         const file = this.currentlyOpenFile;
+        if (file == null) {
+            const currentText = codeEditor.getValue();
+            let fileName = currentText.split("\n")[0];
+            if (fileName == "") fileName = "untitledPost";
+            console.log(fileName);
+            ipcRenderer.send("create-post", fileName, currentText);
+            return;
+        }
+
         if (!file.edited) {
             return;
         }
+
         ipcRenderer.send("save-file", file.path, file.currentContent);
         ipcRenderer.once("file-saved", (event, filePath, contents) => {
             file.initalContent = contents;
@@ -378,9 +396,6 @@ function openFile(file: string) {
         return;
     }
     ipcRenderer.send("load-file-contents", file);
-    ipcRenderer.once("file-contents", (event, file, content) => {
-        fileManager.openFile(file, content);
-    });
 }
 
 function onFileOpened(file: OpenedFile) {

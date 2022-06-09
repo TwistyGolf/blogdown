@@ -215,6 +215,12 @@ ipcMain.on("save-file", async (event, file: string, contents: string) => {
     event.sender.send("file-saved", file, contents);
 });
 
+ipcMain.on("create-post", async (event, fileName: string, contents: string) => {
+    const filePath = pathF.join(currentProject.path, "posts", fileName + ".md");
+    await fsPromises.writeFile(filePath, contents);
+    event.sender.send("file-contents", filePath, contents);
+});
+
 ipcMain.on("rename-file", async (event, file: string, newName: string) => {
     if (!fileIsInActiveDirectory) return;
     if (file.includes(currentProject.directory.path)) {
