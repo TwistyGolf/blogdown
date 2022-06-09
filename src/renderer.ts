@@ -6,6 +6,7 @@ import "codemirror/mode/markdown/markdown";
 import "codemirror/theme/darcula.css";
 import "codemirror/mode/xml/xml";
 import "codemirror/mode/javascript/javascript";
+import "codemirror/mode/css/css";
 import "markdown-it-json";
 
 import MarkdownIt from "markdown-it";
@@ -14,7 +15,7 @@ import electron, { ipcRenderer } from "electron";
 import { Directory } from "./projectManager";
 import { IDictonary } from "./interfaces";
 import { compile } from "sass";
-import { editorTabTemplate } from "./templates";
+import { editorTabTemplate, examplePostTemplate } from "./templates";
 const ipc = electron.ipcRenderer;
 
 let currentMouseX = 0;
@@ -72,6 +73,43 @@ function resizePreview() {
         currentPreviewWidth = previewHiddenWidth;
     }
 }
+const md = new MarkdownIt({
+    highlight: function (str, lang) {
+        if (lang && hljs.getLanguage(lang)) {
+            try {
+                return hljs.highlight(str, {
+                    language: lang,
+                    ignoreIllegals: true,
+                }).value;
+            } catch (__) {
+                return "";
+            }
+        }
+
+        return "";
+    },
+});
+
+let preview: ShadowRoot;
+
+function createPreview() {
+    const new_div = document.createElement("div"),
+        shadow = new_div.attachShadow({ mode: "open" });
+
+    new_div.style.all = "initial";
+    new_div.style.display = "flex";
+
+    preview = shadow;
+    document.getElementById("preview-content").appendChild(new_div);
+}
+
+function getPreviewContent(markdown: string) {
+    return `<style>${currentCss}</style><body><div id="content"><div id="post">${md.render(
+        markdown
+    )}</div></div></body>`;
+}
+
+let currentCss: string;
 
 window.addEventListener("DOMContentLoaded", () => {
     const previewDragger = document.getElementById("preview-drag");
@@ -80,6 +118,7 @@ window.addEventListener("DOMContentLoaded", () => {
     sidebar = document.getElementById("sidebar");
     previewWindow = document.getElementById("preview");
     editor = document.getElementById("editor");
+    createPreview();
 
     previewDragger.addEventListener(
         "mouseup",
@@ -141,22 +180,6 @@ window.addEventListener("DOMContentLoaded", () => {
             mode: "markdown",
         }
     );
-    const md = new MarkdownIt({
-        highlight: function (str, lang) {
-            if (lang && hljs.getLanguage(lang)) {
-                try {
-                    return hljs.highlight(str, {
-                        language: lang,
-                        ignoreIllegals: true,
-                    }).value;
-                } catch (__) {
-                    return "";
-                }
-            }
-
-            return "";
-        },
-    });
 
     document.addEventListener("keydown", (e) => {
         if (e.ctrlKey && e.key === "s") {
@@ -168,29 +191,7 @@ window.addEventListener("DOMContentLoaded", () => {
     });
 
     codeEditor.on("change", (x) => {
-        if (fileManager.currentlyOpenFile != null) {
-            fileManager.updateFileContents(
-                fileManager.currentlyOpenFile,
-                x.getValue()
-            );
-            if (previewFormats.includes(fileManager.currentFileExtension())) {
-                (
-                    document.getElementById(
-                        "preview-content"
-                    ) as HTMLIFrameElement
-                ).srcdoc = md.render(x.getValue());
-            } else {
-                (
-                    document.getElementById(
-                        "preview-content"
-                    ) as HTMLIFrameElement
-                ).srcdoc = "";
-            }
-        } else {
-            (
-                document.getElementById("preview-content") as HTMLIFrameElement
-            ).srcdoc = md.render(x.getValue());
-        }
+        onCodeChanged(x);
     });
 
     document.getElementById("close").addEventListener("click", () => {
@@ -217,6 +218,11 @@ window.addEventListener("DOMContentLoaded", () => {
         renderSidebar();
     });
 
+    ipcRenderer.on("css-content", (event, css: string) => {
+        currentCss = css;
+        onCodeChanged(codeEditor);
+    });
+
     fileManager.addFileCb = onFileOpened;
 
     fileManager.fileSwitchedCb = onFileSwitched;
@@ -231,12 +237,34 @@ window.addEventListener("DOMContentLoaded", () => {
     sidebarFiles = document.getElementById("sidebar-files");
 });
 
-const previewFormats = ["", "md", "txt"];
+function onCodeChanged(x: CodeMirror.Editor) {
+    if (fileManager.currentlyOpenFile != null) {
+        fileManager.updateFileContents(
+            fileManager.currentlyOpenFile,
+            x.getValue()
+        );
+        if (previewFormats.includes(fileManager.currentFileExtension())) {
+            if (fileManager.currentFileExtension() === "css") {
+                currentCss = x.getValue();
+                preview.innerHTML = getPreviewContent(examplePostTemplate);
+            } else {
+                preview.innerHTML = getPreviewContent(x.getValue());
+            }
+        } else {
+            preview.innerHTML = "";
+        }
+    } else {
+        preview.innerHTML = getPreviewContent(x.getValue());
+    }
+}
+
+const previewFormats = ["", "md", "txt", "css"];
 
 const formatMapper = <IDictonary<string>>{
     md: "markdown",
     txt: "markdown",
     json: "json",
+    css: "css",
 };
 
 class OpenedFile {
@@ -408,6 +436,9 @@ function onFileSwitched(file: OpenedFile, oldFile: OpenedFile) {
         file.element.classList.remove("selected");
     });
     file.element.classList.add("selected");
+    if (file.extension != "css") {
+        ipcRenderer.send("request-css");
+    }
     renderSidebar();
 }
 
@@ -425,7 +456,7 @@ function renderDirectory(dir: Directory, indent = 0) {
             renderDirectory(directory, indent + 1);
         }
         for (const file of dir.files) {
-            renderFile(file, indent);
+            renderFileDirectoryEntry(file, indent);
         }
     }
 }
@@ -463,9 +494,9 @@ function getExtension(file: string) {
     return file.substring(file.lastIndexOf(".") + 1);
 }
 
-const allowedExtensions = ["txt", "md", "json"];
+const allowedExtensions = ["txt", "md", "json", "css", "js"];
 
-function renderFile(file: string, indent = 0) {
+function renderFileDirectoryEntry(file: string, indent = 0) {
     const fileEl = document.createElement("div");
     fileEl.classList.add("directory-entry");
     fileEl.textContent = " ".repeat(indent) + "- " + formatFileName(file);

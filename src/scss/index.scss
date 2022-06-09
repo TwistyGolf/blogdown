@@ -267,6 +267,7 @@ pre > code {
         right: 0;
         left: 0;
         bottom: 0;
+        display: flex;
     }
 }
 
@@ -274,6 +275,7 @@ iframe {
     border: none;
     height: 100%;
     width: 100%;
+    pointer-events: none;
 }
 
 .dragger {
@@ -295,9 +297,6 @@ iframe {
     }
     &:hover {
         background-color: gray;
-        .dragger-indicator {
-            display: block;
-        }
     }
 }
 

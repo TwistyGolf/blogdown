@@ -9,6 +9,7 @@ import chokidar from "chokidar";
 import { Mutex } from "async-mutex";
 
 import { ipcMain } from "electron";
+import { cssTemplate, examplePostTemplate } from "./templates";
 
 const store = new Store<StoreFormat>({ schema: schema });
 
@@ -52,7 +53,6 @@ class Project {
         this.directory = initDirectory(this.path);
         this.directory.expanded = true;
         await trawlDirectory(this.directory);
-        printDirectory(this.directory);
         mainWindow.webContents.send("render-sidebar", this.directory);
         this.fsWatcher = chokidar.watch(this.path).on("all", async () => {
             await this.directoryMutex.runExclusive(async () => {
@@ -145,6 +145,7 @@ async function openProjectProperly(dir: string) {
     const p = new Project(dir);
     await p.loadConfig();
     await p.readDirectory();
+
     store.set("lastOpenedProject", dir);
     currentProject = p;
 }
@@ -166,42 +167,34 @@ const exampleConfig = `{
 	"title": "Blog Name",
 	"postsDirectory": "posts",
 	"imagesDirectory": "img",
-	"icon": "favicon.ico"
+	"icon": "favicon.ico",
+    "css": "style.css"
 }`;
-
-const examplePost = `
-## This is a post in Blogdown
-### 😎 Emoji's are supported 😎
-You have access to all the common markdown syntax
-Such as:
-- *italtics*
-
-- **bold**
-
-- ***bold italtics***
-
-- ~~strikethrough~~
-
-- \`inline code blocks\`
-
-- \`\`\`js
-  let x = "Styled code blocks"
-  // These are multiline
-  \`\`\`
-You can also resize the preview window by dragging |
-
-<---------------------------------------------------
-
-## Horizontal rules
----
-`;
 
 async function intialiseProject(dir: string) {
     await fsPromises.writeFile(pathF.join(dir, configFileName), exampleConfig);
-    await fsPromises.mkdir(pathF.join(dir, "posts"));
+    try {
+        await fsPromises.mkdir(pathF.join(dir, "posts"));
+    } catch {
+        console.log("Posts directory already exists");
+    }
+    try {
+        await fsPromises.mkdir(pathF.join(dir, "css"));
+    } catch {
+        console.log("Css directory already exists");
+    }
+    try {
+        await fsPromises.mkdir(pathF.join(dir, "js"));
+    } catch {
+        console.log("Js directory already exists");
+    }
+    await fsPromises.writeFile(
+        pathF.join(dir, "css", "style.css"),
+        cssTemplate
+    );
     await fsPromises.writeFile(
         pathF.join(dir, "posts", "example.md"),
-        examplePost
+        examplePostTemplate
     );
 }
 
@@ -236,6 +229,13 @@ ipcMain.on("open-directory", (event, path) => {
     } else {
         currentProject.openDirectories.push(path);
     }
+});
+
+ipcMain.on("request-css", async (event) => {
+    const css = await fsPromises.readFile(
+        pathF.join(currentProject.directory.path, "css", "style.css")
+    );
+    event.sender.send("css-content", css.toString());
 });
 
 export async function createFile(fileName: string, directory: Directory) {
